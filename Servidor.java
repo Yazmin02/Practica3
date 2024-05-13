@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 class Servidor {
     public static final int PUERTO = 8000;
@@ -95,14 +94,40 @@ class Servidor {
             File file = new File("archivos" + path);
 
             if (file.exists() && !file.isDirectory()) {
-                dos.writeBytes("HTTP/1.1 200 OK\r\n");
-                dos.writeBytes("Content-Length: " + file.length() + "\r\n");
-                dos.writeBytes("\r\n");
+                FileInputStream fis = new FileInputStream(file);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+                String line;
+
+                // Indica si el contenido de <head> está siendo leído
+                boolean readingHead = false;
+
+                // Itera sobre cada línea del archivo
+                while ((line = reader.readLine()) != null) {
+                    // Si se encuentra la etiqueta <head>, se marca como iniciada la lectura del head
+                    if (line.contains("<head>")) {
+                        readingHead = true;
+                    }
+
+                    // Si el contenido de <head> está siendo leído, se escribe la línea en el DataOutputStream
+                    if (readingHead) {
+                        dos.writeBytes(line + "\r\n");
+                    }
+
+                    // Si se encuentra la etiqueta de cierre </head>, se detiene la lectura del head
+                    if (line.contains("</head>")) {
+                        break;
+                    }
+                }
+
+                // Cierra el lector de archivos
+                reader.close();
             } else {
+                // Si el archivo no existe, se envía una respuesta 404
                 dos.writeBytes("HTTP/1.1 404 Not Found\r\n");
                 dos.writeBytes("\r\n");
             }
 
+            // Se asegura de que los datos se envíen
             dos.flush();
         }
 

@@ -5,7 +5,7 @@ public class Cliente {
     public static void main(String[] args) {
         try {
             // Crear objeto URL
-            String urlString = "http:// 192.168.56.1";
+            String urlString ="http://148.204.58.221/axel/aplicaciones/sockets/java/";
             URL url = new URL(urlString);
 
             // Abrir conexión HTTP
@@ -13,8 +13,14 @@ public class Cliente {
 
             // Solicitar al usuario que ingrese el método HTTP deseado
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.print("Ingrese el método HTTP (GET, HEAD, PUT, POST): ");
+            System.out.print("Ingrese el método HTTP (GET o HEAD): ");
             String method = reader.readLine().toUpperCase();
+
+            // Validar el método HTTP ingresado
+            if (!(method.equals("GET") || method.equals("HEAD"))) {
+                System.out.println("Método HTTP inválido. Por favor, ingrese GET o HEAD.");
+                return;
+            }
 
             // Establecer el método HTTP en la conexión
             connection.setRequestMethod(method);
@@ -47,5 +53,5 @@ public class Cliente {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }//main
 }
