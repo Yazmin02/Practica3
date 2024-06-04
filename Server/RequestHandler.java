@@ -1,7 +1,6 @@
 package Server;
 
 import util.MimeTypes;
-
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +18,50 @@ public class RequestHandler implements Runnable {
     @Override
     public void run() {
         try {
-            handleRequest();
+            DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
+            byte[] bytes = new byte[50000];
+            int t = inputStream.read(bytes);
+            String request = new String(bytes, 0, t);
+
+            OutputStream out = clientSocket.getOutputStream();
+
+            System.out.println(request);
+
+            // Parse the request line
+            BufferedReader headerReader = new BufferedReader(new StringReader(request));
+            String requestLine = headerReader.readLine();
+            if (requestLine == null || requestLine.isEmpty()) {
+                sendError(400, "Bad Request: Invalid Request Line", out, true);
+                return;
+            }
+
+            String[] parts = requestLine.split(" ");
+            if (parts.length != 3) {
+                sendError(400, "Bad Request: Invalid Request Line", out, true);
+                return;
+            }
+
+            String method = parts[0];
+            String resource = parts[1];
+            int contentLength = getContentLength(headerReader);
+
+            switch (method) {
+                case "GET":
+                    handleGet(resource, out);
+                    break;
+                case "POST":
+                    handlePost(headerReader, inputStream, out, contentLength);
+                    break;
+                case "PUT":
+                    handlePut(resource, inputStream, out, contentLength, bytes, t, request);
+                    break;
+                case "HEAD":
+                    handleHead(resource, out);
+                    break;
+                default:
+                    sendError(405, "Method Not Allowed", out, false);
+                    break;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -28,53 +70,6 @@ public class RequestHandler implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private void handleRequest() throws IOException {
-        DataInputStream inputStream = new DataInputStream(clientSocket.getInputStream());
-        byte[] bytes = new byte[50000];
-        int t = inputStream.read(bytes);
-        String request = new String(bytes, 0, t);
-
-        OutputStream out = clientSocket.getOutputStream();
-
-        System.out.println(request);
-
-        // Parse the request line
-        BufferedReader headerReader = new BufferedReader(new StringReader(request));
-        String requestLine = headerReader.readLine();
-        if (requestLine == null || requestLine.isEmpty()) {
-            sendError(400, "Bad Request: Invalid Request Line", out, true);
-            return;
-        }
-
-        String[] parts = requestLine.split(" ");
-        if (parts.length != 3) {
-            sendError(400, "Bad Request: Invalid Request Line", out, true);
-            return;
-        }
-
-        String method = parts[0];
-        String resource = parts[1];
-        int contentLength = getContentLength(headerReader);
-
-        switch (method) {
-            case "GET":
-                handleGet(resource, out);
-                break;
-            case "POST":
-                handlePost(headerReader, inputStream, out, contentLength);
-                break;
-            case "PUT":
-                handlePut(resource, inputStream, out, contentLength);
-                break;
-            case "HEAD":
-                handleHead(resource, out);
-                break;
-            default:
-                sendError(405, "Method Not Allowed", out, false);
-                break;
         }
     }
 
@@ -132,20 +127,31 @@ public class RequestHandler implements Runnable {
         }
     }
 
-    private void handlePut(String resource, InputStream inputStream, OutputStream out, int contentLength) throws IOException {
-        Path filePath = getFilePath(resource.substring(1));  // Quitar el primer slash '/'
+    private void handlePut(String resource, InputStream inputStream, OutputStream out, int contentLength, byte[] fullRequest, int requestLength, String request) throws IOException {
+        // Leer el cuerpo de la solicitud después de las cabeceras
+        int headerEndIndex = request.indexOf("\r\n\r\n") + 4;
+        if (headerEndIndex < 4) {
+            sendError(400, "Bad Request: Invalid Request Body", out, true);
+            return;
+        }
+
+        int contentStartIndex = headerEndIndex;
+        byte[] content = new byte[contentLength];
+        System.arraycopy(fullRequest, contentStartIndex, content, 0, contentLength);
+
+        String fileName = resource.substring(1);  // Quitar el primer slash '/'
+        Path filePath = getFilePath("/" + fileName);
         Files.createDirectories(filePath.getParent());
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                fos.write(buffer, 0, bytesRead);
-            }
+            fos.write(content);
             sendHeader(201, "Created", "text/plain", 0, out);
         } catch (IOException e) {
             e.printStackTrace();
             sendError(403, "Forbidden: " + e.getMessage(), out, true);
+        } finally {
+            inputStream.close();
+            out.close();
         }
     }
 
@@ -168,7 +174,7 @@ public class RequestHandler implements Runnable {
         if ("/".equals(resource)) {
             resource = "/index.html";
         }
-        return Paths.get("C:/Users/david/P3 Redes/Practica3/", resource).toAbsolutePath();
+        return Paths.get("/home/alan232/Documentos/GitHub/Practica3/", resource).toAbsolutePath();
     }
 
     private void sendHeader(int statusCode, String statusText, String contentType, long contentLength, OutputStream out) throws IOException {

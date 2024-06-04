@@ -1,0 +1,9 @@
+Este es un archivo de texto de ejemplo para probar el servidor.
+Puedes cambiar el contenido de este archivo según tus necesidades.
+Aquí hay algunas líneas adicionales para tener más texto:
+
+- Línea 1: Esto es solo un texto de ejemplo.
+- Línea 2: Puedes agregar cualquier contenido aquí.
+- Línea 3: Prueba de contenido adicional.
+
+Gracias por usar nuestro servidor.
