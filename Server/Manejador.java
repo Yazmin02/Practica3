@@ -8,10 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class RequestHandler implements Runnable {
+public class Manejador implements Runnable {
     private final Socket clientSocket;
 
-    public RequestHandler(Socket clientSocket) {
+    public Manejador(Socket clientSocket) {
         this.clientSocket = clientSocket;
     }
 
@@ -106,17 +106,12 @@ public class RequestHandler implements Runnable {
 
     private void handlePost(BufferedReader headerReader, InputStream inputStream, OutputStream out, int contentLength) throws IOException {
         // Leer el cuerpo de la solicitud después de las cabeceras
-        StringBuilder bodyBuilder = new StringBuilder();
         char[] buffer = new char[contentLength];
-        int bytesRead = headerReader.read(buffer, 0, contentLength);
-        bodyBuilder.append(buffer, 0, bytesRead);
+        headerReader.read(buffer, 0, contentLength);
+        String body = new String(buffer).trim();
 
-        // Convertir el cuerpo de la solicitud a un String y eliminar espacios en blanco adicionales
-        String fileName = bodyBuilder.toString().trim();
-        System.out.println("File requested: " + fileName);
-
-        // Obtener la ruta del archivo solicitado
-        Path filePath = getFilePath("/" + fileName);
+        // Asumimos que el cuerpo es el nombre del archivo a buscar
+        Path filePath = getFilePath("/" + body);
         if (Files.exists(filePath)) {
             String mimeType = MimeTypes.getMimeType(filePath.toString());
             sendHeader(200, "OK", mimeType, Files.size(filePath), out);

@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivo Modificado</title>
+</head>
+<body>
+    <h1>Archivo Modificado por PUT</h1>
+    <p>Este archivo fue creado o modificado utilizando el método PUT.</p>
+</body>
+</html>

@@ -1,21 +1,17 @@
 package Server;
-
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 public class Servidor {
     private static final int PORT = 9999;
     private static final int THREAD_POOL_SIZE = 10;
     private ServerSocket serverSocket;
     private final ExecutorService threadPool;
-
     public Servidor() {
         threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     }
-
     public void start() {
         try {
             serverSocket = new ServerSocket(PORT);
@@ -24,7 +20,7 @@ public class Servidor {
             while (true) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    threadPool.submit(new RequestHandler(clientSocket));
+                    threadPool.submit(new Manejador(clientSocket));
                 } catch (IOException e) {
                     System.out.println("Error accepting client connection");
                     e.printStackTrace();
